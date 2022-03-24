@@ -1,0 +1,23 @@
+name: mlkit_scan_plugin
+description: The MLKit scan plugin for Flutter.
+version: 1.0.0
+homepage: https://github.com/AlexV525/flutter_mlkit_scan_plugin
+
+environment:
+  sdk: ">=2.12.0 <3.0.0"
+  flutter: ">=2.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+flutter:
+  plugin:
+    platforms:
+      android:
+        package: com.alexv525.mlkit_scan_plugin
+        pluginClass: MLKitScanPlugin
+      ios:
+        pluginClass: MLKitScanPlugin
+  assets:
+    - assets/
