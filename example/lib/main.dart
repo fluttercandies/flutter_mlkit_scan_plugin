@@ -185,6 +185,7 @@ class _MyAppState extends State<MyApp> {
                     ),
                     TextButton(
                       onPressed: () {
+                        ScanPlugin.destroy();
                         ScanPlugin.stopScan();
                       },
                       child: const Text('Stop scan.'),

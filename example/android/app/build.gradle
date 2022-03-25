@@ -26,7 +26,7 @@ apply plugin: 'kotlin-android'
 apply from: "$flutterRoot/packages/flutter_tools/gradle/flutter.gradle"
 
 android {
-    compileSdkVersion 30
+    compileSdkVersion flutter.compileSdkVersion
 
     sourceSets {
         main.java.srcDirs += 'src/main/kotlin'
@@ -39,7 +39,7 @@ android {
     defaultConfig {
         applicationId "com.alexv525.mlkit_scan_plugin_example"
         minSdkVersion 21
-        targetSdkVersion 30
+        targetSdkVersion flutter.targetSdkVersion
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
     }
@@ -60,5 +60,4 @@ flutter {
 }
 
 dependencies {
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
 }
