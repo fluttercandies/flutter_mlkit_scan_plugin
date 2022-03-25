@@ -10,3 +10,6 @@ build/
 
 .env
 pubspec.lock
+
+.vscode/settings.json
+.vscode/launch.json
