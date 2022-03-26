@@ -77,7 +77,6 @@ class _ScanRectWidgetState extends AnimatedWidgetBaseState<ScanRectWidget> {
     return DefaultTextStyle.merge(
       style: TextStyle(
         color: Colors.grey[600],
-        height: 1.2,
         fontSize: 34,
         fontWeight: FontWeight.bold,
       ),
