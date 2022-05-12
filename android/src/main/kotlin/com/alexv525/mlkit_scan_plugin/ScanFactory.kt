@@ -12,7 +12,7 @@ class ScanFactory(
     var view: ScanView? = null
 
     @Suppress("UNCHECKED_CAST")
-    override fun create(context: Context, viewId: Int, args: Any?): PlatformView {
+    override fun create(context: Context?, viewId: Int, args: Any?): PlatformView {
         if (view == null) {
             val sizeMap = args as HashMap<String, Int>?
             val size = if (sizeMap != null) Size(sizeMap["w"]!!, sizeMap["h"]!!) else null
