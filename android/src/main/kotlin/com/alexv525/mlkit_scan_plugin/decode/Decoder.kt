@@ -10,17 +10,15 @@ import android.graphics.Matrix
 import android.os.Handler
 import android.os.Looper
 import android.renderscript.*
-import com.google.mlkit.vision.barcode.common.Barcode
-import com.google.mlkit.vision.text.Text
 import com.alexv525.mlkit_scan_plugin.Constant
 import com.alexv525.mlkit_scan_plugin.MLKitScanPlugin
 import com.alexv525.mlkit_scan_plugin.Shared
 import com.alexv525.mlkit_scan_plugin.vision.FrameMetadata
 import com.alexv525.mlkit_scan_plugin.vision.processor.BarcodeScannerProcessor
 import com.alexv525.mlkit_scan_plugin.vision.processor.TextRecognitionProcessor
+import com.google.mlkit.vision.barcode.common.Barcode
+import com.google.mlkit.vision.text.Text
 import java.lang.ref.WeakReference
-import java.util.*
-import kotlin.collections.LinkedHashSet
 
 class Decoder(private val mScanPlugin: MLKitScanPlugin) {
     private val weakSelf = WeakReference(this)
@@ -83,8 +81,8 @@ class Decoder(private val mScanPlugin: MLKitScanPlugin) {
                 firstBitmap,
                 rect.left,
                 rect.top,
-                rect.width(),
-                rect.height(),
+                rect.width().coerceAtMost(firstBitmap.width),
+                rect.height().coerceAtMost(firstBitmap.height),
                 null,
                 false
             )
