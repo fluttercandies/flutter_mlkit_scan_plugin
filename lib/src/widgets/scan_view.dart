@@ -39,7 +39,7 @@ class _ScanViewState extends State<ScanView> with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance?.addObserver(this);
+    WidgetsBinding.instance.addObserver(this);
     if (_innerResultListener != null) {
       _resultListener = _resultListenerWrapper(_innerResultListener!);
     }
@@ -68,7 +68,7 @@ class _ScanViewState extends State<ScanView> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      WidgetsBinding.instance?.addPostFrameCallback((_) async {
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
         if (ScanPlugin.isScanningPaused) {
           ScanPlugin.resumeScan();
         }
@@ -80,7 +80,7 @@ class _ScanViewState extends State<ScanView> with WidgetsBindingObserver {
 
   @override
   void dispose() {
-    WidgetsBinding.instance?.removeObserver(this);
+    WidgetsBinding.instance.removeObserver(this);
     if (_resultListener != null) {
       ScanPlugin.removeListener(_resultListener!);
     }
