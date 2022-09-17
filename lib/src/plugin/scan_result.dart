@@ -77,10 +77,75 @@ class ScanResult {
           phone == other.phone;
 
   @override
-  int get hashCode => hashValues(state, code, phone);
+  int get hashCode => state.hashCode ^ code.hashCode ^ phone.hashCode;
 
   @override
   String toString() {
     return const JsonEncoder.withIndent('  ').convert(toJson());
   }
+}
+
+@immutable
+class Barcode {
+  const Barcode({
+    required this.value,
+    this.boundingBox,
+  });
+
+  factory Barcode.fromJson(Map<String, dynamic> map) {
+    final Map<String, int>? box =
+        (map['boundingBox'] as Map<String, dynamic>?)?.cast<String, int>();
+    return Barcode(
+      value: map['value'].toString(),
+      boundingBox: box == null
+          ? null
+          : Rect.fromLTRB(
+              box['left']!.toDouble(),
+              box['top']!.toDouble(),
+              box['right']!.toDouble(),
+              box['bottom']!.toDouble(),
+            ),
+    );
+  }
+
+  final String value;
+  final Rect? boundingBox;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Barcode &&
+          runtimeType == other.runtimeType &&
+          value == other.value &&
+          boundingBox == other.boundingBox;
+
+  @override
+  int get hashCode => value.hashCode ^ boundingBox.hashCode;
+
+  @override
+  String toString() {
+    return 'Barcode(value: $value, boundingBox: $boundingBox)';
+  }
+}
+
+enum BarcodeFormat {
+  ALL_FORMATS(0),
+  CODE_128(1),
+  CODE_39(2),
+  CODE_93(4),
+  CODABAR(8),
+  DATA_MATRIX(16),
+  EAN_13(32),
+  EAN_8(64),
+  ITF(128),
+  QR_CODE(256),
+  UPC_A(512),
+  UPC_E(1024),
+  PDF417(2048),
+  AZTEC(4096),
+  ;
+
+  const BarcodeFormat(this.code);
+
+  final int code;
 }

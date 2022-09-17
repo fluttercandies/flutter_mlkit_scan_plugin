@@ -3,17 +3,21 @@ package com.alexv525.mlkit_scan_plugin
 import android.app.Activity
 import android.graphics.Rect
 import android.hardware.Camera
+import android.net.Uri
 import android.util.Size
 import com.alexv525.mlkit_scan_plugin.Extension.dp2px
 import com.alexv525.mlkit_scan_plugin.camera.CameraConfigurationManager
 import com.alexv525.mlkit_scan_plugin.decode.Decoder
 import com.alexv525.mlkit_scan_plugin.decode.PreviewCallback
+import com.google.mlkit.vision.common.InputImage
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
+import org.json.JSONArray
+import java.io.File
 
 class MLKitScanPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
     private var mContext: Activity? = null
@@ -31,8 +35,7 @@ class MLKitScanPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
     private var mLastFocusTime: Long = System.currentTimeMillis()
     private var useAutoFocus = false
     private val focusMode = arrayListOf(
-        Camera.Parameters.FOCUS_MODE_AUTO,
-        Camera.Parameters.FOCUS_MODE_MACRO
+        Camera.Parameters.FOCUS_MODE_AUTO, Camera.Parameters.FOCUS_MODE_MACRO
     )
 
     private var mConfigManager: CameraConfigurationManager? = null
@@ -45,9 +48,7 @@ class MLKitScanPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
 
     override fun onAttachedToEngine(binding: FlutterPlugin.FlutterPluginBinding) {
         viewFactory = Shared.initChannels(binding.binaryMessenger, this).apply {
-            binding
-                .platformViewRegistry
-                .registerViewFactory(Constant.VIEW_TYPE_ID, this)
+            binding.platformViewRegistry.registerViewFactory(Constant.VIEW_TYPE_ID, this)
         }
     }
 
@@ -100,9 +101,7 @@ class MLKitScanPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
             Constant.METHOD_OPEN_FLASHLIGHT -> {
                 if (mCamera == null || mConfigManager == null) {
                     result.error(
-                        "STATE_ERROR",
-                        "Camera seems not being initialized.",
-                        null
+                        "STATE_ERROR", "Camera seems not being initialized.", null
                     )
                     return
                 }
@@ -114,9 +113,7 @@ class MLKitScanPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
             Constant.METHOD_CLOSE_FLASHLIGHT -> {
                 if (mCamera == null || mConfigManager == null) {
                     result.error(
-                        "STATE_ERROR",
-                        "Camera seems not being initialized.",
-                        null
+                        "STATE_ERROR", "Camera seems not being initialized.", null
                     )
                     return
                 }
@@ -136,6 +133,52 @@ class MLKitScanPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                 pauseScan()
                 result.success(null)
             }
+            Constant.METHOD_ANALYZING_IMAGE_FILE -> {
+                context?.apply {
+                    val path = call.argument<String>("path")!!
+                    val formats = call.argument<Any?>("formats")
+                    val client = formats?.run {
+                        if (this is JSONArray) {
+                            val length = this.length()
+                            val array = IntArray(length)
+                            for (i in 0 until length) {
+                                array[i] = this.getInt(i)
+                            }
+                            array
+                        } else {
+                            null
+                        }
+                    }.getBarcodeScanning()
+                    val task =
+                        client.process(InputImage.fromFilePath(this, Uri.fromFile(File(path))))
+                    task.addOnSuccessListener {
+                        client.close()
+                        val list = it.fold(mutableListOf<Map<String, Any?>>()) { d, b ->
+                            if (!b.displayValue.isNullOrBlank()) {
+                                d.add(
+                                    mapOf(
+                                        "value" to b.displayValue,
+                                        "boundingBox" to b.boundingBox?.run {
+                                            mapOf(
+                                                "left" to left,
+                                                "right" to right,
+                                                "top" to top,
+                                                "bottom" to bottom,
+                                            )
+                                        },
+                                    )
+                                )
+                            }
+                            d
+                        }
+                        result.success(list)
+                    }
+                    task.addOnFailureListener {
+                        client.close()
+                        result.error("-1", it.message, it)
+                    }
+                } ?: result.error("-3", "unmounted", null)
+            }
             else -> {
                 result.notImplemented()
             }
@@ -146,10 +189,8 @@ class MLKitScanPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
     private fun initCamera() {
         mConfigManager = CameraConfigurationManager().apply {
             setContext(mContext)
-            mPreviewCallback = PreviewCallback(
-                this,
-                onPreviewFrame = { data, frameMetadata -> mDecoder?.decode(data, frameMetadata) }
-            )
+            mPreviewCallback = PreviewCallback(this,
+                onPreviewFrame = { data, frameMetadata -> mDecoder?.decode(data, frameMetadata) })
         }
     }
 
@@ -193,7 +234,7 @@ class MLKitScanPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
         return false
     }
 
-    private fun obtainCameraId() : Int {
+    private fun obtainCameraId(): Int {
         val cameraInfo = Camera.CameraInfo()
         for (i in 0 until Camera.getNumberOfCameras()) {
             Camera.getCameraInfo(i, cameraInfo)

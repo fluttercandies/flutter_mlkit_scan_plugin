@@ -26,6 +26,7 @@ class ScanPlugin {
 
   static const MethodChannel _scanChannel = MethodChannel(
     '$_channelPrefix/scanChannel',
+    JSONMethodCodec(),
   );
 
   static const EventChannel _resultChannel = EventChannel(
@@ -47,6 +48,7 @@ class ScanPlugin {
   static const String _METHOD_OPEN_FLASHLIGHT = 'openFlashlight';
   static const String _METHOD_CLOSE_FLASHLIGHT = 'closeFlashlight';
   static const String _METHOD_REQUEST_WAKE_LOCK = 'requestWakeLock';
+  static const String _METHOD_ANALYZING_IMAGE_FILE = 'analyzingImageFile';
 
   ////////////////////////////////////////////////////////////////////////////
   ////////////////////////////////////////////////////////////////////////////
@@ -272,6 +274,27 @@ class ScanPlugin {
       return;
     }
     return _invokeMethod(_METHOD_REQUEST_WAKE_LOCK, value);
+  }
+
+  static Future<List<Barcode>> analyzingImageFile(
+    String path, [
+    List<BarcodeFormat>? formats,
+  ]) async {
+    final List<dynamic>? list = await _invokeMethod<List<dynamic>>(
+      _METHOD_ANALYZING_IMAGE_FILE,
+      <String, dynamic>{
+        'path': path,
+        'formats':
+            formats?.map((BarcodeFormat e) => e.code).toList(growable: false),
+      },
+    );
+    if (list == null) {
+      return <Barcode>[];
+    }
+    return list
+        .cast<Map<String, dynamic>>()
+        .map((Map<String, dynamic> e) => Barcode.fromJson(e))
+        .toList(growable: false);
   }
 
   @optionalTypeArgs

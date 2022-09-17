@@ -16,6 +16,7 @@ internal class PreviewCallback(
 ) : Camera.PreviewCallback {
     private var cameraRotation: Int = 90
 
+    @Deprecated("Deprecated in Java")
     override fun onPreviewFrame(data: ByteArray, camera: Camera) {
         val size: Size = mConfigManager.cameraResolution ?: return
         onPreviewFrame?.invoke(data, FrameMetadata(size, cameraRotation))

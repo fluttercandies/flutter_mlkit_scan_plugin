@@ -26,15 +26,12 @@ apply plugin: 'kotlin-android'
 apply from: "$flutterRoot/packages/flutter_tools/gradle/flutter.gradle"
 
 android {
-    compileSdkVersion flutter.compileSdkVersion
+    compileSdkVersion 33
 
     sourceSets {
         main.java.srcDirs += 'src/main/kotlin'
     }
 
-    lintOptions {
-        disable 'InvalidPackage'
-    }
 
     defaultConfig {
         applicationId "com.alexv525.mlkit_scan_plugin_example"
@@ -52,7 +49,9 @@ android {
         }
     }
 
-
+    lint {
+        disable 'InvalidPackage'
+    }
 }
 
 flutter {
