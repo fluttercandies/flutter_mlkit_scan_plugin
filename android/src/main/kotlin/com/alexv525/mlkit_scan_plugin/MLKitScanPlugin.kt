@@ -13,10 +13,12 @@ import com.google.mlkit.vision.common.InputImage
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
+import io.flutter.plugin.common.JSONUtil
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
-import org.json.JSONArray
+import org.json.JSONObject
+import org.json.JSONTokener
 import java.io.File
 
 class MLKitScanPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
@@ -135,19 +137,17 @@ class MLKitScanPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
             }
             Constant.METHOD_ANALYZING_IMAGE_FILE -> {
                 context?.apply {
-                    val path = call.argument<String>("path")!!
-                    val formats = call.argument<Any?>("formats")
+                    val arguments = call.arguments<String>()
+                    val args = JSONTokener(arguments).nextValue() as JSONObject
+                    val path = args.getString("path")
+                    val formats = args.optJSONArray("formats")
                     val client = formats?.run {
-                        if (this is JSONArray) {
-                            val length = this.length()
-                            val array = IntArray(length)
-                            for (i in 0 until length) {
-                                array[i] = this.getInt(i)
-                            }
-                            array
-                        } else {
-                            null
+                        val length = this.length()
+                        val array = IntArray(length)
+                        for (i in 0 until length) {
+                            array[i] = this.getInt(i)
                         }
+                        array
                     }.getBarcodeScanning()
                     val task =
                         client.process(InputImage.fromFilePath(this, Uri.fromFile(File(path))))
@@ -171,7 +171,7 @@ class MLKitScanPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                             }
                             d
                         }
-                        result.success(list)
+                        result.success(JSONUtil.wrap(list).toString())
                     }
                     task.addOnFailureListener {
                         client.close()

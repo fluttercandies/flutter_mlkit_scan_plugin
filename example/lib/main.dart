@@ -4,8 +4,10 @@
 ///
 import 'dart:developer' as _developer;
 import 'dart:ui' as ui;
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:mlkit_scan_plugin/mlkit_scan_plugin.dart';
 import 'package:permission_handler/permission_handler.dart';
 
@@ -190,6 +192,7 @@ class _MyAppState extends State<MyApp> {
                       },
                       child: const Text('Stop scan.'),
                     ),
+                    _buildAnalyzingImageFileButton(),
                   ],
                 ),
               ),
@@ -222,6 +225,78 @@ class _MyAppState extends State<MyApp> {
         ),
       ),
     );
+  }
+
+  Widget _buildAnalyzingImageFileButton() {
+    return Builder(builder: (BuildContext context) {
+      return TextButton(
+        onPressed: () async {
+          final ImagePicker imagePicker = ImagePicker();
+          final XFile? file = await imagePicker.pickImage(
+            source: ImageSource.gallery,
+          );
+          if (file != null) {
+            final List<Barcode> result =
+                await ScanPlugin.analyzingImageFile(file.path);
+            showBottomSheet<void>(
+              context: context,
+              builder: (BuildContext context) {
+                return result.isEmpty
+                    ? Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(24.0),
+                        child: const Text('Nothing'),
+                      )
+                    : Container(
+                        padding: const EdgeInsets.all(24.0),
+                        height:
+                            MediaQueryData.fromWindow(window).size.height / 2,
+                        child: ListView.builder(
+                          itemCount: result.length,
+                          itemBuilder: (BuildContext context, int index) {
+                            final Barcode code = result[index];
+                            final ui.Rect? box = code.boundingBox;
+                            return Container(
+                              decoration: BoxDecoration(
+                                border: Border.all(
+                                  color: Theme.of(context).dividerColor,
+                                ),
+                              ),
+                              padding: const EdgeInsets.all(16.0),
+                              margin: const EdgeInsets.only(bottom: 12.0),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: <Widget>[
+                                  Text(
+                                    code.value,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const Divider(),
+                                  if (box != null)
+                                    Text(
+                                      'boundingBox: top(${box.top}), '
+                                      'right(${box.right}), '
+                                      'bottom(${box.bottom}), '
+                                      'left(${box.left})',
+                                      style: const TextStyle(
+                                        fontSize: 12.0,
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
+                      );
+              },
+            );
+          }
+        },
+        child: const Text('Analyzing image file.'),
+      );
+    });
   }
 
   Future<bool> checkAllPermissions() {

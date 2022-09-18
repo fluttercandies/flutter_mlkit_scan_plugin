@@ -3,6 +3,7 @@
 /// [Date] 12/11/20 4:40 PM
 ///
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
@@ -26,7 +27,6 @@ class ScanPlugin {
 
   static const MethodChannel _scanChannel = MethodChannel(
     '$_channelPrefix/scanChannel',
-    JSONMethodCodec(),
   );
 
   static const EventChannel _resultChannel = EventChannel(
@@ -280,17 +280,20 @@ class ScanPlugin {
     String path, [
     List<BarcodeFormat>? formats,
   ]) async {
-    final List<dynamic>? list = await _invokeMethod<List<dynamic>>(
+    final String? json = await _invokeMethod<String>(
       _METHOD_ANALYZING_IMAGE_FILE,
-      <String, dynamic>{
-        'path': path,
-        'formats':
-            formats?.map((BarcodeFormat e) => e.code).toList(growable: false),
-      },
+      jsonEncode(
+        <String, dynamic>{
+          'path': path,
+          'formats':
+              formats?.map((BarcodeFormat e) => e.code).toList(growable: false),
+        },
+      ),
     );
-    if (list == null) {
+    if (json == null || json.isEmpty) {
       return <Barcode>[];
     }
+    final List<dynamic> list = jsonDecode(json) as List<dynamic>;
     return list
         .cast<Map<String, dynamic>>()
         .map((Map<String, dynamic> e) => Barcode.fromJson(e))

@@ -4,16 +4,17 @@ description: Demonstrates how to use the mlkit_scan_plugin plugin.
 publish_to: 'none'
 
 environment:
-  sdk: ">=2.12.0 <3.0.0"
+  sdk: ">=2.17.0 <3.0.0"
 
 dependencies:
   flutter:
     sdk: flutter
 
+  image_picker: ^0.8.5+3
   mlkit_scan_plugin:
     path: ../
 
-  permission_handler: ^9.2.0
+  permission_handler: ^10.0.0
 
 flutter:
   uses-material-design: true
