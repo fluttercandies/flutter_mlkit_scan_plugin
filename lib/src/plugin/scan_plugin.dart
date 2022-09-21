@@ -48,7 +48,7 @@ class ScanPlugin {
   static const String _METHOD_OPEN_FLASHLIGHT = 'openFlashlight';
   static const String _METHOD_CLOSE_FLASHLIGHT = 'closeFlashlight';
   static const String _METHOD_REQUEST_WAKE_LOCK = 'requestWakeLock';
-  static const String _METHOD_ANALYZING_IMAGE_FILE = 'analyzingImageFile';
+  static const String _METHOD_SCAN_FROM_FILE = 'scanFromFile';
 
   ////////////////////////////////////////////////////////////////////////////
   ////////////////////////////////////////////////////////////////////////////
@@ -276,12 +276,12 @@ class ScanPlugin {
     return _invokeMethod(_METHOD_REQUEST_WAKE_LOCK, value);
   }
 
-  static Future<List<Barcode>> analyzingImageFile(
+  static Future<List<Barcode>> scanFromFile(
     String path, [
     List<BarcodeFormat>? formats,
   ]) async {
     final String? json = await _invokeMethod<String>(
-      _METHOD_ANALYZING_IMAGE_FILE,
+      _METHOD_SCAN_FROM_FILE,
       jsonEncode(
         <String, dynamic>{
           'path': path,

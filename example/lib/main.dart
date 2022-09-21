@@ -60,6 +60,65 @@ class _MyAppState extends State<MyApp> {
     super.dispose();
   }
 
+  Future<void> _scanFromFile() async {
+    final XFile? file = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+    );
+    if (file != null) {
+      final List<Barcode> result = await ScanPlugin.scanFromFile(file.path);
+      showBottomSheet<void>(
+        context: context,
+        builder: (BuildContext context) {
+          if (result.isEmpty) {
+            return Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(24.0),
+              child: const Text('Nothing'),
+            );
+          }
+          return Container(
+            height: MediaQueryData.fromWindow(window).size.height / 2,
+            padding: const EdgeInsets.all(24.0),
+            child: ListView.builder(
+              itemCount: result.length,
+              itemBuilder: (BuildContext context, int index) {
+                final Barcode code = result[index];
+                final ui.Rect? box = code.boundingBox;
+                return Container(
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: Theme.of(context).dividerColor,
+                    ),
+                  ),
+                  padding: const EdgeInsets.all(16.0),
+                  margin: const EdgeInsets.only(bottom: 12.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text(
+                        code.value,
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      const Divider(),
+                      if (box != null)
+                        Text(
+                          'boundingBox: left(${box.left}), '
+                          'top(${box.top}), '
+                          'width(${box.width}), '
+                          'height(${box.height})',
+                          style: const TextStyle(fontSize: 12.0),
+                        ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          );
+        },
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -192,7 +251,10 @@ class _MyAppState extends State<MyApp> {
                       },
                       child: const Text('Stop scan.'),
                     ),
-                    _buildAnalyzingImageFileButton(),
+                    TextButton(
+                      onPressed: _scanFromFile,
+                      child: const Text('Scan codes from file.'),
+                    ),
                   ],
                 ),
               ),
@@ -225,78 +287,6 @@ class _MyAppState extends State<MyApp> {
         ),
       ),
     );
-  }
-
-  Widget _buildAnalyzingImageFileButton() {
-    return Builder(builder: (BuildContext context) {
-      return TextButton(
-        onPressed: () async {
-          final ImagePicker imagePicker = ImagePicker();
-          final XFile? file = await imagePicker.pickImage(
-            source: ImageSource.gallery,
-          );
-          if (file != null) {
-            final List<Barcode> result =
-                await ScanPlugin.analyzingImageFile(file.path);
-            showBottomSheet<void>(
-              context: context,
-              builder: (BuildContext context) {
-                return result.isEmpty
-                    ? Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(24.0),
-                        child: const Text('Nothing'),
-                      )
-                    : Container(
-                        padding: const EdgeInsets.all(24.0),
-                        height:
-                            MediaQueryData.fromWindow(window).size.height / 2,
-                        child: ListView.builder(
-                          itemCount: result.length,
-                          itemBuilder: (BuildContext context, int index) {
-                            final Barcode code = result[index];
-                            final ui.Rect? box = code.boundingBox;
-                            return Container(
-                              decoration: BoxDecoration(
-                                border: Border.all(
-                                  color: Theme.of(context).dividerColor,
-                                ),
-                              ),
-                              padding: const EdgeInsets.all(16.0),
-                              margin: const EdgeInsets.only(bottom: 12.0),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: <Widget>[
-                                  Text(
-                                    code.value,
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  const Divider(),
-                                  if (box != null)
-                                    Text(
-                                      'boundingBox: top(${box.top}), '
-                                      'right(${box.right}), '
-                                      'bottom(${box.bottom}), '
-                                      'left(${box.left})',
-                                      style: const TextStyle(
-                                        fontSize: 12.0,
-                                      ),
-                                    ),
-                                ],
-                              ),
-                            );
-                          },
-                        ),
-                      );
-              },
-            );
-          }
-        },
-        child: const Text('Analyzing image file.'),
-      );
-    });
   }
 
   Future<bool> checkAllPermissions() {

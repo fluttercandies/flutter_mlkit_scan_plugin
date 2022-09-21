@@ -51,7 +51,7 @@ internal object Extension {
     }
 }
 
-internal fun IntArray?.getBarcodeScanning(): BarcodeScanner {
+internal fun IntArray?.getBarcodeScanner(): BarcodeScanner {
     val formats = this
     return when {
         formats == null || formats.isEmpty() -> BarcodeScanning.getClient()

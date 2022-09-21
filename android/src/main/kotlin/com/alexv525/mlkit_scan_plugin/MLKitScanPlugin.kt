@@ -135,7 +135,7 @@ class MLKitScanPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                 pauseScan()
                 result.success(null)
             }
-            Constant.METHOD_ANALYZING_IMAGE_FILE -> {
+            Constant.METHOD_SCAN_FROM_FILE -> {
                 context?.apply {
                     val arguments = call.arguments<String>()
                     val args = JSONTokener(arguments).nextValue() as JSONObject
@@ -148,7 +148,7 @@ class MLKitScanPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                             array[i] = this.getInt(i)
                         }
                         array
-                    }.getBarcodeScanning()
+                    }.getBarcodeScanner()
                     val task =
                         client.process(InputImage.fromFilePath(this, Uri.fromFile(File(path))))
                     task.addOnSuccessListener {

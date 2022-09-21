@@ -11,7 +11,7 @@ object Constant {
     const val METHOD_REFOCUS = "reFocus"
     const val METHOD_RESUME_SCAN = "resumeScan"
     const val METHOD_PAUSE_SCAN = "pauseScan"
-    const val METHOD_ANALYZING_IMAGE_FILE = "analyzingImageFile"
+    const val METHOD_SCAN_FROM_FILE = "scanFromFile"
     const val METHOD_OPEN_FLASHLIGHT = "openFlashlight"
     const val METHOD_CLOSE_FLASHLIGHT = "closeFlashlight"
     const val METHOD_REQUEST_WAKE_LOCK = "requestWakeLock"
