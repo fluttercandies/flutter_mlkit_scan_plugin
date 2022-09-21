@@ -1,4 +1,7 @@
 import UIKit
+import MLKitBarcodeScanning
+import MLKitVision
+import UIKit
 
 struct ChannelMethod {
     static let host = "MLKitScanPlugin"
@@ -10,6 +13,7 @@ struct ChannelMethod {
     static let switchScanType = "switchScanType"
     static let pauseScan = "pauseScan"
     static let resumeScan = "resumeScan"
+    static let scanImageFile = "analyzingImageFile"
     static let reFocus = "reFocus"
     static let stopScan = "stopScan"
     static let openFlashlight = "openFlashlight"
@@ -74,6 +78,10 @@ class ChannelManager: NSObject {
             factory.platformView?.scanView?.removeFromSuperview()
             factory.platformView?.scanView = nil
             result(true)
+        case ChannelMethod.scanImageFile:
+            DispatchQueue.global(qos: .background).async {
+                scanFromFile(call, result)
+            }
         case ChannelMethod.openFlashlight:
             let _err = scanView.toggleFlashlight(enable: true)
             if (_err == nil) {
@@ -137,6 +145,89 @@ class ChannelManager: NSObject {
             scanView.adjustFocus(CGPoint(x: flutterX, y: flutterY))
         }
         result(true)
+    }
+    
+    private static func scanFromFile(
+        _ call: FlutterMethodCall,
+        _ result: @escaping FlutterResult
+    ) {
+        if let callArguments = call.arguments as? String,
+           let arguments = try? JSONSerialization.jsonObject(
+            with: Data(callArguments.utf8), options: []
+           ) as? [String: Any],
+           let path = arguments["path"] as? String {
+            var barcodeFormat = BarcodeFormat()
+            if let formats = arguments["formats"] as? [Int] {
+                for format in formats {
+                    barcodeFormat.insert(BarcodeFormat(rawValue: format))
+                }
+            }
+            let image = UIImage.init(contentsOfFile: path)
+            if (image == nil) {
+                result(
+                    FlutterError(
+                        code: "SCAN_FROM_FILE",
+                        message: "No UIImage from the path.",
+                        details: path
+                    )
+                )
+                return
+            }
+            let visionImage = VisionImage(image: image!)
+            
+            let barcodeScanner = BarcodeScanner.barcodeScanner(
+                options: BarcodeScannerOptions(formats: barcodeFormat)
+            )
+            var barcodes: [Barcode]
+            do {
+                barcodes = try barcodeScanner.results(in: visionImage)
+            } catch let error {
+                result(
+                    FlutterError(
+                        code: "SCAN_FROM_FILE",
+                        message: "Failed to scan barcodes",
+                        details: error.localizedDescription
+                    )
+                )
+                return
+            }
+            if (barcodes.isEmpty) {
+                result(nil)
+                return
+            }
+            var barcodeResult = [[String: Any]]()
+            for barcode in barcodes {
+                if let value = barcode.displayValue {
+                    barcodeResult.append(
+                        [
+                            "value": value,
+                            "box": [
+                                "left": barcode.frame.minX,
+                                "top": barcode.frame.minY,
+                                "width": barcode.frame.width,
+                                "height": barcode.frame.height
+                            ]
+                        ]
+                    )
+                }
+            }
+            let data = String(
+                data: try! JSONSerialization.data(
+                    withJSONObject: barcodeResult,
+                    options: []
+                ),
+                encoding: .utf8
+            )
+            result(data)
+        } else {
+            result(
+                FlutterError(
+                    code: "SCAN_FROM_FILE",
+                    message: "Invalid arguments.",
+                    details: nil
+                )
+            )
+        }
     }
     
     private static func requestWakeLock(_ call: FlutterMethodCall) {
