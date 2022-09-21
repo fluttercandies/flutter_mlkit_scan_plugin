@@ -161,9 +161,9 @@ class MLKitScanPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                                         "boundingBox" to b.boundingBox?.run {
                                             mapOf(
                                                 "left" to left,
-                                                "right" to right,
                                                 "top" to top,
-                                                "bottom" to bottom,
+                                                "width" to width(),
+                                                "height" to height(),
                                             )
                                         },
                                     )

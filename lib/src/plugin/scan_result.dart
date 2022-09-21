@@ -99,11 +99,11 @@ class Barcode {
       value: map['value'].toString(),
       boundingBox: box == null
           ? null
-          : Rect.fromLTRB(
+          : Rect.fromLTWH(
               box['left']!.toDouble(),
               box['top']!.toDouble(),
-              box['right']!.toDouble(),
-              box['bottom']!.toDouble(),
+              box['width']!.toDouble(),
+              box['height']!.toDouble(),
             ),
     );
   }
