@@ -94,7 +94,7 @@ class Barcode {
 
   factory Barcode.fromJson(Map<String, dynamic> map) {
     final Map<String, int>? box =
-        (map['boundingBox'] as Map<String, dynamic>?)?.cast<String, int>();
+        (map['boundingBox'] as Map?)?.cast<String, int>();
     return Barcode(
       value: map['value'].toString(),
       boundingBox: box == null

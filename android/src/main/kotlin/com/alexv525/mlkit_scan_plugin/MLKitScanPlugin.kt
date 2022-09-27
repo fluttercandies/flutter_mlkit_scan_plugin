@@ -137,15 +137,13 @@ class MLKitScanPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
             }
             Constant.METHOD_SCAN_FROM_FILE -> {
                 context?.apply {
-                    val arguments = call.arguments<String>()
-                    val args = JSONTokener(arguments).nextValue() as JSONObject
-                    val path = args.getString("path")
-                    val formats = args.optJSONArray("formats")
+                    val path = call.argument<String>("path")
+                    val formats = call.argument<List<Int>>("formats")
                     val client = formats?.run {
-                        val length = this.length()
+                        val length = this.size
                         val array = IntArray(length)
                         for (i in 0 until length) {
-                            array[i] = this.getInt(i)
+                            array[i] = this[i]
                         }
                         array
                     }.getBarcodeScanner()
@@ -171,7 +169,7 @@ class MLKitScanPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                             }
                             d
                         }
-                        result.success(JSONUtil.wrap(list).toString())
+                        result.success(list)
                     }
                     task.addOnFailureListener {
                         client.close()

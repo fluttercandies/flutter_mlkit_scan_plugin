@@ -3,7 +3,6 @@
 /// [Date] 12/11/20 4:40 PM
 ///
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
@@ -280,24 +279,20 @@ class ScanPlugin {
     String path, [
     List<BarcodeFormat>? formats,
   ]) async {
-    final String? json = await _invokeMethod<String>(
+    final List<dynamic>? result = await _invokeMethod(
       _METHOD_SCAN_FROM_FILE,
-      jsonEncode(
-        <String, dynamic>{
-          'path': path,
-          'formats':
-              formats?.map((BarcodeFormat e) => e.code).toList(growable: false),
-        },
-      ),
+      <String, dynamic>{
+        'path': path,
+        'formats': formats?.map((BarcodeFormat e) => e.code).toList(),
+      },
     );
-    if (json == null || json.isEmpty) {
+    if (result == null || result.isEmpty) {
       return <Barcode>[];
     }
-    final List<dynamic> list = jsonDecode(json) as List<dynamic>;
-    return list
-        .cast<Map<String, dynamic>>()
-        .map((Map<String, dynamic> e) => Barcode.fromJson(e))
-        .toList(growable: false);
+    return result
+        .cast<Map<Object?, Object?>>()
+        .map((e) => Barcode.fromJson(e.cast<String, Object?>()))
+        .toList();
   }
 
   @optionalTypeArgs

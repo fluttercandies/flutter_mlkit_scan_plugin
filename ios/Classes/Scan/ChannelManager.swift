@@ -13,7 +13,7 @@ struct ChannelMethod {
     static let switchScanType = "switchScanType"
     static let pauseScan = "pauseScan"
     static let resumeScan = "resumeScan"
-    static let scanImageFile = "analyzingImageFile"
+    static let scanFromFile = "scanFromFile"
     static let reFocus = "reFocus"
     static let stopScan = "stopScan"
     static let openFlashlight = "openFlashlight"
@@ -78,7 +78,7 @@ class ChannelManager: NSObject {
             factory.platformView?.scanView?.removeFromSuperview()
             factory.platformView?.scanView = nil
             result(true)
-        case ChannelMethod.scanImageFile:
+        case ChannelMethod.scanFromFile:
             DispatchQueue.global(qos: .background).async {
                 scanFromFile(call, result)
             }
@@ -151,16 +151,15 @@ class ChannelManager: NSObject {
         _ call: FlutterMethodCall,
         _ result: @escaping FlutterResult
     ) {
-        if let callArguments = call.arguments as? String,
-           let arguments = try? JSONSerialization.jsonObject(
-            with: Data(callArguments.utf8), options: []
-           ) as? [String: Any],
+        if let arguments = call.arguments as? Dictionary<String, Any>,
            let path = arguments["path"] as? String {
             var barcodeFormat = BarcodeFormat()
             if let formats = arguments["formats"] as? [Int] {
                 for format in formats {
                     barcodeFormat.insert(BarcodeFormat(rawValue: format))
                 }
+            } else {
+                barcodeFormat = BarcodeFormat(arrayLiteral: .all)
             }
             let image = UIImage.init(contentsOfFile: path)
             if (image == nil) {
@@ -211,14 +210,7 @@ class ChannelManager: NSObject {
                     )
                 }
             }
-            let data = String(
-                data: try! JSONSerialization.data(
-                    withJSONObject: barcodeResult,
-                    options: []
-                ),
-                encoding: .utf8
-            )
-            result(data)
+            result(barcodeResult)
         } else {
             result(
                 FlutterError(
