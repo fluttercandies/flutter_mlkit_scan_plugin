@@ -13,6 +13,7 @@ import android.renderscript.*
 import com.alexv525.mlkit_scan_plugin.Constant
 import com.alexv525.mlkit_scan_plugin.MLKitScanPlugin
 import com.alexv525.mlkit_scan_plugin.Shared
+import com.alexv525.mlkit_scan_plugin.runInBackground
 import com.alexv525.mlkit_scan_plugin.vision.FrameMetadata
 import com.alexv525.mlkit_scan_plugin.vision.processor.BarcodeScannerProcessor
 import com.alexv525.mlkit_scan_plugin.vision.processor.TextRecognitionProcessor
@@ -51,10 +52,6 @@ class Decoder(private val mScanPlugin: MLKitScanPlugin) {
             Constant.SCAN_TYPE_QR_CODE -> intArrayOf(Barcode.FORMAT_QR_CODE)
             else -> null
         }
-
-    private fun runInBackground(runnable: Runnable) {
-        Shared.threadPool.execute(runnable)
-    }
 
     private fun runInMainThread(runnable: Runnable) {
         Handler(Looper.getMainLooper()).post(runnable)

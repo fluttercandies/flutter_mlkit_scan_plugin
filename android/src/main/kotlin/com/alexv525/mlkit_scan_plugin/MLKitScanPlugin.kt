@@ -13,12 +13,9 @@ import com.google.mlkit.vision.common.InputImage
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
-import io.flutter.plugin.common.JSONUtil
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
-import org.json.JSONObject
-import org.json.JSONTokener
 import java.io.File
 
 class MLKitScanPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
@@ -136,46 +133,9 @@ class MLKitScanPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                 result.success(null)
             }
             Constant.METHOD_SCAN_FROM_FILE -> {
-                context?.apply {
-                    val path = call.argument<String>("path")
-                    val formats = call.argument<List<Int>>("formats")
-                    val client = formats?.run {
-                        val length = this.size
-                        val array = IntArray(length)
-                        for (i in 0 until length) {
-                            array[i] = this[i]
-                        }
-                        array
-                    }.getBarcodeScanner()
-                    val task =
-                        client.process(InputImage.fromFilePath(this, Uri.fromFile(File(path))))
-                    task.addOnSuccessListener {
-                        client.close()
-                        val list = it.fold(mutableListOf<Map<String, Any?>>()) { d, b ->
-                            if (!b.displayValue.isNullOrBlank()) {
-                                d.add(
-                                    mapOf(
-                                        "value" to b.displayValue,
-                                        "boundingBox" to b.boundingBox?.run {
-                                            mapOf(
-                                                "left" to left,
-                                                "top" to top,
-                                                "width" to width(),
-                                                "height" to height(),
-                                            )
-                                        },
-                                    )
-                                )
-                            }
-                            d
-                        }
-                        result.success(list)
-                    }
-                    task.addOnFailureListener {
-                        client.close()
-                        result.error("-1", it.message, it)
-                    }
-                } ?: result.error("-3", "unmounted", null)
+                runInBackground {
+                    scanFromFile(call, result)
+                }
             }
             else -> {
                 result.notImplemented()
@@ -407,5 +367,48 @@ class MLKitScanPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
             0,
             screenSize.width, screenSize.height,
         )
+    }
+
+    private fun scanFromFile(call: MethodCall, result: MethodChannel.Result) {
+        context?.apply {
+            val path = call.argument<String>("path")!!
+            val formats = call.argument<List<Int>>("formats")
+            val client = formats?.run {
+                val length = this.size
+                val array = IntArray(length)
+                for (i in 0 until length) {
+                    array[i] = this[i]
+                }
+                array
+            }.getBarcodeScanner()
+            val image = InputImage.fromFilePath(this, Uri.fromFile(File(path)))
+            val task = client.process(image)
+            task.addOnSuccessListener {
+                client.close()
+                val list = it.fold(mutableListOf<Map<String, Any?>>()) { d, b ->
+                    if (!b.displayValue.isNullOrBlank()) {
+                        d.add(
+                            mapOf(
+                                "value" to b.displayValue,
+                                "boundingBox" to b.boundingBox?.run {
+                                    mapOf(
+                                        "left" to left,
+                                        "top" to top,
+                                        "width" to width(),
+                                        "height" to height(),
+                                    )
+                                },
+                            )
+                        )
+                    }
+                    d
+                }
+                result.success(list)
+            }
+            task.addOnFailureListener {
+                client.close()
+                result.error("-1", it.message, it)
+            }
+        } ?: result.error("-3", "unmounted", null)
     }
 }

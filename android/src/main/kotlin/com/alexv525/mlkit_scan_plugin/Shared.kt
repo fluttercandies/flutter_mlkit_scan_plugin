@@ -27,3 +27,7 @@ object Shared {
         return ScanFactory(plugin)
     }
 }
+
+fun runInBackground(runnable: Runnable) {
+    Shared.threadPool.execute(runnable)
+}
