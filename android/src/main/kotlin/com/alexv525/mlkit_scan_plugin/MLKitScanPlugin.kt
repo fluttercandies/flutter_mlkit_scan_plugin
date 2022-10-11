@@ -1,9 +1,12 @@
 package com.alexv525.mlkit_scan_plugin
 
 import android.app.Activity
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.Rect
 import android.hardware.Camera
 import android.net.Uri
+import android.os.Build
 import android.util.Size
 import com.alexv525.mlkit_scan_plugin.Extension.dp2px
 import com.alexv525.mlkit_scan_plugin.camera.CameraConfigurationManager
@@ -381,8 +384,18 @@ class MLKitScanPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                 }
                 array
             }.getBarcodeScanner()
-            val image = InputImage.fromFilePath(this, Uri.fromFile(File(path)))
-            val task = client.process(image)
+            val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+            BitmapFactory.decodeFile(path, options)
+            val mlImage: InputImage =
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && options.outConfig != Bitmap.Config.ARGB_8888) {
+                    InputImage.fromBitmap(
+                        BitmapFactory.decodeFile(path).copy(Bitmap.Config.ARGB_8888, false),
+                        0
+                    )
+                } else {
+                    InputImage.fromFilePath(this, Uri.fromFile(File(path)))
+                }
+            val task = client.process(mlImage)
             task.addOnSuccessListener {
                 client.close()
                 val list = it.fold(mutableListOf<Map<String, Any?>>()) { d, b ->
