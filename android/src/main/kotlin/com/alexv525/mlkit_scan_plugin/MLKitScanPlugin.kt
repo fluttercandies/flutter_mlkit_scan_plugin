@@ -86,20 +86,24 @@ class MLKitScanPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
             Constant.METHOD_LOAD_SCAN_VIEW -> {
                 loadScanView(result)
             }
+
             Constant.METHOD_SWITCH_SCAN_TYPE -> {
                 val arguments = call.arguments as HashMap<*, *>
                 switchScanType(arguments)
                 result.success(null)
             }
+
             Constant.METHOD_STOP_SCAN -> {
                 quitScan()
                 result.success(null)
             }
+
             Constant.METHOD_REFOCUS -> { // 聚焦并重新识别
                 mIsDecoding = true
                 restartPreviewAndDecode()
                 result.success(null)
             }
+
             Constant.METHOD_OPEN_FLASHLIGHT -> {
                 if (mCamera == null || mConfigManager == null) {
                     result.error(
@@ -112,6 +116,7 @@ class MLKitScanPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                 }
                 result.success(null)
             }
+
             Constant.METHOD_CLOSE_FLASHLIGHT -> {
                 if (mCamera == null || mConfigManager == null) {
                     result.error(
@@ -124,22 +129,27 @@ class MLKitScanPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                 }
                 result.success(null)
             }
+
             Constant.METHOD_REQUEST_WAKE_LOCK -> {
                 requestWakeLock(call)
                 result.success(null)
             }
+
             Constant.METHOD_RESUME_SCAN -> {
                 resumeScan(result)
             }
+
             Constant.METHOD_PAUSE_SCAN -> {
                 pauseScan()
                 result.success(null)
             }
+
             Constant.METHOD_SCAN_FROM_FILE -> {
                 runInBackground {
                     scanFromFile(call, result)
                 }
             }
+
             else -> {
                 result.notImplemented()
             }
@@ -332,6 +342,7 @@ class MLKitScanPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
             Constant.SCAN_TYPE_WAIT -> {
                 mIsDecoding = false
             }
+
             else -> {
                 mIsDecoding = true
                 rect?.apply {
@@ -384,17 +395,27 @@ class MLKitScanPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                 }
                 array
             }.getBarcodeScanner()
-            val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-            BitmapFactory.decodeFile(path, options)
-            val mlImage: InputImage =
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && options.outConfig != Bitmap.Config.ARGB_8888) {
-                    InputImage.fromBitmap(
-                        BitmapFactory.decodeFile(path).copy(Bitmap.Config.ARGB_8888, false),
-                        0
-                    )
-                } else {
-                    InputImage.fromFilePath(this, Uri.fromFile(File(path)))
-                }
+            val mlImage: InputImage
+            val shouldConvertBitmap: Boolean
+            var decodedBitmap: Bitmap? = null
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                BitmapFactory.decodeFile(path, options)
+                shouldConvertBitmap = options.outConfig != Bitmap.Config.ARGB_8888
+            } else {
+                val bitmap = BitmapFactory.decodeFile(path)
+                shouldConvertBitmap = bitmap.config != Bitmap.Config.ARGB_8888
+                decodedBitmap = bitmap
+            }
+            mlImage = if (shouldConvertBitmap) {
+                val bitmap = decodedBitmap ?: BitmapFactory.decodeFile(path)
+                val copiedBitmap = bitmap.copy(Bitmap.Config.ARGB_8888, false)
+                bitmap.recycle()
+                InputImage.fromBitmap(copiedBitmap, 0)
+            } else {
+                InputImage.fromFilePath(this, Uri.fromFile(File(path)))
+            }
+            decodedBitmap?.recycle()
             val task = client.process(mlImage)
             task.addOnSuccessListener {
                 client.close()
