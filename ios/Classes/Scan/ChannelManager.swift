@@ -161,7 +161,7 @@ class ChannelManager: NSObject {
             } else {
                 barcodeFormat = BarcodeFormat(arrayLiteral: .all)
             }
-            let image = UIImage.init(contentsOfFile: path)
+            var image: UIImage? = UIImage.init(contentsOfFile: path)
             if (image == nil) {
                 result(
                     FlutterError(
@@ -172,7 +172,24 @@ class ChannelManager: NSObject {
                 )
                 return
             }
+            let fileExtension = URL(fileURLWithPath: path).pathExtension.lowercased()
+            // Convert all PNG to JPEG to avoid unsupported formats from MLKit.
+            if (fileExtension == "png") {
+                let imageData = image!.jpegData(compressionQuality: 1)
+                image = UIImage(data: imageData!)
+                if (image == nil) {
+                    result(
+                        FlutterError(
+                            code: "SCAN_FROM_FILE",
+                            message: "Cannot produce valid image data.",
+                            details: path
+                        )
+                    )
+                    return
+                }
+            }
             let visionImage = VisionImage(image: image!)
+            visionImage.orientation = image!.imageOrientation
             
             let barcodeScanner = BarcodeScanner.barcodeScanner(
                 options: BarcodeScannerOptions(formats: barcodeFormat)
