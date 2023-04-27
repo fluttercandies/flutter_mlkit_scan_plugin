@@ -14,8 +14,10 @@ import com.google.mlkit.vision.text.latin.TextRecognizerOptions
 /** Processor for the text detector. */
 class TextRecognitionProcessor(
     onSuccessUnit: ((results: Text) -> Unit)? = null,
-    onFailureUnit: ((e: Exception) -> Unit)? = null
-) : VisionProcessorBase<Text>(onSuccessUnit, onFailureUnit) {
+    onFailureUnit: ((e: Exception) -> Unit)? = null,
+    imageMaxWidth: Int = 0,
+    imageMaxHeight: Int = 0
+) : VisionProcessorBase<Text>(onSuccessUnit, onFailureUnit, imageMaxWidth, imageMaxHeight) {
     private val textRecognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
 
     override fun stop() {

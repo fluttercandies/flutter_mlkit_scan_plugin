@@ -8,6 +8,7 @@ package com.alexv525.mlkit_scan_plugin.vision.processor
 import android.graphics.Bitmap
 import android.os.SystemClock
 import android.util.Log
+import android.util.Pair
 import androidx.annotation.CallSuper
 import androidx.annotation.GuardedBy
 import com.google.android.gms.tasks.Task
@@ -31,7 +32,9 @@ import java.util.TimerTask
  */
 abstract class VisionProcessorBase<T>(
     private val onSuccessUnit: ((results: T) -> Unit)? = null,
-    private val onFailureUnit: ((e: Exception) -> Unit)? = null
+    private val onFailureUnit: ((e: Exception) -> Unit)? = null,
+    private var imageMaxWidth: Int = 0,
+    private var imageMaxHeight: Int = 0
 ) : VisionImageProcessor {
     companion object {
         private const val TAG = "VisionProcessorBase"
@@ -85,10 +88,27 @@ abstract class VisionProcessorBase<T>(
 
     // Code for processing single still image
     override fun processBitmap(bitmap: Bitmap?, rotation: Int) {
+        bitmap!!
         val frameStartMs = SystemClock.elapsedRealtime()
 
+        val resizedBitmap = if (imageMaxWidth != 0 && imageMaxHeight != 0) {
+            if (bitmap.width <= imageMaxWidth && bitmap.height <= imageMaxHeight) bitmap else {
+                // Get the dimensions of the image view.
+                val targetedSize: Pair<Int, Int> = Pair(imageMaxWidth, imageMaxHeight)
+                // Determine how much to scale down the image.
+                val scaleFactor = (bitmap.width.toFloat() / targetedSize.first.toFloat()).coerceAtLeast(
+                    bitmap.height.toFloat() / targetedSize.second.toFloat()
+                )
+                Bitmap.createScaledBitmap(
+                    bitmap,
+                    (bitmap.width / scaleFactor).toInt(),
+                    (bitmap.height / scaleFactor).toInt(),
+                    true
+                )
+            }
+        } else bitmap
         requestDetectInImage(
-            InputImage.fromBitmap(bitmap!!, rotation),
+            InputImage.fromBitmap(resizedBitmap!!, rotation),
             frameStartMs
         )
     }

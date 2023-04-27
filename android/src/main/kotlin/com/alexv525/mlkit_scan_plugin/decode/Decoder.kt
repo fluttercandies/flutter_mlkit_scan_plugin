@@ -10,10 +10,8 @@ import android.graphics.Matrix
 import android.os.Handler
 import android.os.Looper
 import android.renderscript.*
-import com.alexv525.mlkit_scan_plugin.Constant
-import com.alexv525.mlkit_scan_plugin.MLKitScanPlugin
-import com.alexv525.mlkit_scan_plugin.Shared
-import com.alexv525.mlkit_scan_plugin.runInBackground
+import com.alexv525.mlkit_scan_plugin.*
+import com.alexv525.mlkit_scan_plugin.Extension
 import com.alexv525.mlkit_scan_plugin.vision.FrameMetadata
 import com.alexv525.mlkit_scan_plugin.vision.processor.BarcodeScannerProcessor
 import com.alexv525.mlkit_scan_plugin.vision.processor.TextRecognitionProcessor
@@ -67,6 +65,8 @@ class Decoder(private val mScanPlugin: MLKitScanPlugin) {
             validateResult()
             return
         }
+        val imageMaxWidth = mScanPlugin.screenSize.width
+        val imageMaxHeight = mScanPlugin.screenSize.height
         mLastDecodeTime = currentTime
         runInBackground {
             if (scanType == Constant.SCAN_TYPE_WAIT) {
@@ -89,7 +89,9 @@ class Decoder(private val mScanPlugin: MLKitScanPlugin) {
                 if (mScanResult.code.isNullOrBlank()) {
                     BarcodeScannerProcessor(
                         formats = this,
-                        onSuccessUnit = { handleBarcodes(it) }
+                        onSuccessUnit = { handleBarcodes(it) },
+                        imageMaxWidth = imageMaxWidth,
+                        imageMaxHeight = imageMaxHeight
                     ).processBitmap(croppedBitmap)
                 }
             }
@@ -97,7 +99,9 @@ class Decoder(private val mScanPlugin: MLKitScanPlugin) {
             if (isScanningMobile && mScanResult.phone.isEmpty()
             ) {
                 TextRecognitionProcessor(
-                    onSuccessUnit = { handleText(it) }
+                    onSuccessUnit = { handleText(it) },
+                    imageMaxWidth = imageMaxWidth,
+                    imageMaxHeight = imageMaxHeight
                 ).processBitmap(croppedBitmap)
             }
         }
