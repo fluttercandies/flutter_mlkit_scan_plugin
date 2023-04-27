@@ -384,9 +384,16 @@ class MLKitScanPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
     private fun scanFromFile(call: MethodCall, result: MethodChannel.Result) {
         context?.apply {
             val path = call.argument<String>("path")!!
-            val formats = call.argument<IntArray?>("formats")
+            val formats = call.argument<List<Int>?>("formats")
             val processor = BarcodeScannerProcessor(
-                formats = formats,
+                formats = formats?.run {
+                    val length = this.size
+                    val array = IntArray(length)
+                    for (i in 0 until length) {
+                        array[i] = this[i]
+                    }
+                    array
+                },
                 onSuccessUnit = {
                     val list = it.fold(mutableListOf<Map<String, Any?>>()) { d, b ->
                         if (!b.displayValue.isNullOrBlank()) {
