@@ -18,10 +18,10 @@ class ScanView: UIView {
     private var codeSuccess: Bool = false
     private var phoneSuccess: Bool = false
     private var resultModel: ScanResult?
-    private final var imageParser = ImageParser()
     private final var barcodeFormats = BarcodeFormat.init(arrayLiteral: [.code39, .code93, .code128])
     private final var qrCodeFormats = BarcodeFormat.qrCode
     private final var goodsCodeFormats = BarcodeFormat.init(arrayLiteral: [.EAN8, .EAN13, .UPCA, .UPCE])
+    final var imageParser = ImageParser()
     
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -228,7 +228,7 @@ class ScanView: UIView {
             debugPrint("SampleBuffer does not include UIImage.")
             return
         }
-        guard let resultImage = imageParser.reSize(
+        guard let resultImage = imageParser.crop(
             image: scanImage,
             rect: scanningFrame!
         ) else {

@@ -3,9 +3,25 @@ import Foundation
 class ImageParser {
     var isProcessing: Bool = false
     
+    func reScale(image: UIImage, maxSize: CGSize) -> UIImage {
+        let scaleFactor = max(
+            image.size.width / maxSize.width,
+            image.size.height / maxSize.height
+        )
+        let newSize = CGSize(
+            width: image.size.width / scaleFactor,
+            height: image.size.height / scaleFactor
+        )
+        UIGraphicsBeginImageContextWithOptions(newSize, false, 0.0)
+        image.draw(in: CGRectMake(0, 0, newSize.width, newSize.height))
+        let newImage: UIImage = UIGraphicsGetImageFromCurrentImageContext()!
+        UIGraphicsEndImageContext()
+        return newImage
+    }
+    
     /// 裁剪图片
     /// rect需要裁剪的图片相对于原图的范围
-    func reSize(image: UIImage, rect: CGRect) -> UIImage? {
+    func crop(image: UIImage, rect: CGRect) -> UIImage? {
         isProcessing = true
         guard let orientatedImage = fixOrientation(image) else {
             isProcessing = false

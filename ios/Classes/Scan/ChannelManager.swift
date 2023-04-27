@@ -80,7 +80,7 @@ class ChannelManager: NSObject {
             result(true)
         case ChannelMethod.scanFromFile:
             DispatchQueue.global(qos: .background).async {
-                scanFromFile(call, result)
+                scanFromFile(call, result, scanView.imageParser)
             }
         case ChannelMethod.openFlashlight:
             let _err = scanView.toggleFlashlight(enable: true)
@@ -149,7 +149,8 @@ class ChannelManager: NSObject {
     
     private static func scanFromFile(
         _ call: FlutterMethodCall,
-        _ result: @escaping FlutterResult
+        _ result: @escaping FlutterResult,
+        _ imageParser: ImageParser
     ) {
         if let arguments = call.arguments as? Dictionary<String, Any>,
            let path = arguments["path"] as? String {
@@ -180,7 +181,7 @@ class ChannelManager: NSObject {
                 if (image == nil) {
                     result(
                         FlutterError(
-                            code: "SCAN_FROM_FILE",
+                            code: call.method,
                             message: "Cannot produce valid image data.",
                             details: path
                         )
@@ -188,8 +189,24 @@ class ChannelManager: NSObject {
                     return
                 }
             }
-            let visionImage = VisionImage(image: image!)
-            visionImage.orientation = image!.imageOrientation
+            guard var image = image else {
+                debugPrint("UIImage is null.")
+                result(
+                    FlutterError(
+                        code: call.method,
+                        message: "Cannot produce a valid UIImage from the path.",
+                        details: "UIImage is null."
+                    )
+                )
+                return
+            }
+            let maxBounds = UIScreen.main.bounds
+            if (image.size.width > maxBounds.width ||
+                image.size.height > maxBounds.height) {
+                image = imageParser.reScale(image: image, maxSize: maxBounds.size)
+            }
+            let visionImage = VisionImage(image: image)
+            visionImage.orientation = image.imageOrientation
             
             let barcodeScanner = BarcodeScanner.barcodeScanner(
                 options: BarcodeScannerOptions(formats: barcodeFormat)

@@ -5,21 +5,19 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Rect
 import android.hardware.Camera
-import android.net.Uri
 import android.os.Build
 import android.util.Size
 import com.alexv525.mlkit_scan_plugin.Extension.dp2px
 import com.alexv525.mlkit_scan_plugin.camera.CameraConfigurationManager
 import com.alexv525.mlkit_scan_plugin.decode.Decoder
 import com.alexv525.mlkit_scan_plugin.decode.PreviewCallback
-import com.google.mlkit.vision.common.InputImage
+import com.alexv525.mlkit_scan_plugin.vision.processor.BarcodeScannerProcessor
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
-import java.io.File
 
 class MLKitScanPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
     private var mContext: Activity? = null
@@ -45,8 +43,8 @@ class MLKitScanPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
     private var mPreviewCallback: PreviewCallback? = null
     val cropRect: Rect get() = mRect
     private lateinit var mRect: Rect
-    private lateinit var screenSize: Size
     var viewFactory: ScanFactory? = null
+    lateinit var screenSize: Size
 
     override fun onAttachedToEngine(binding: FlutterPlugin.FlutterPluginBinding) {
         viewFactory = Shared.initChannels(binding.binaryMessenger, this).apply {
@@ -386,16 +384,43 @@ class MLKitScanPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
     private fun scanFromFile(call: MethodCall, result: MethodChannel.Result) {
         context?.apply {
             val path = call.argument<String>("path")!!
-            val formats = call.argument<List<Int>>("formats")
-            val client = formats?.run {
-                val length = this.size
-                val array = IntArray(length)
-                for (i in 0 until length) {
-                    array[i] = this[i]
-                }
-                array
-            }.getBarcodeScanner()
-            val mlImage: InputImage
+            val formats = call.argument<List<Int>?>("formats")
+            val processor = BarcodeScannerProcessor(
+                formats = formats?.run {
+                    val length = this.size
+                    val array = IntArray(length)
+                    for (i in 0 until length) {
+                        array[i] = this[i]
+                    }
+                    array
+                },
+                onSuccessUnit = {
+                    val list = it.fold(mutableListOf<Map<String, Any?>>()) { d, b ->
+                        if (!b.displayValue.isNullOrBlank()) {
+                            d.add(
+                                mapOf(
+                                    "value" to b.displayValue,
+                                    "boundingBox" to b.boundingBox?.run {
+                                        mapOf(
+                                            "left" to left,
+                                            "top" to top,
+                                            "width" to width(),
+                                            "height" to height(),
+                                        )
+                                    },
+                                )
+                            )
+                        }
+                        d
+                    }
+                    result.success(list)
+                },
+                onFailureUnit = {
+                    result.error("-1", it.message, it)
+                },
+                imageMaxWidth = screenSize.width,
+                imageMaxHeight = screenSize.height
+            )
             val shouldConvertBitmap: Boolean
             var decodedBitmap: Bitmap? = null
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -407,42 +432,16 @@ class MLKitScanPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                 shouldConvertBitmap = bitmap.config != Bitmap.Config.ARGB_8888
                 decodedBitmap = bitmap
             }
-            mlImage = if (shouldConvertBitmap) {
-                val bitmap = decodedBitmap ?: BitmapFactory.decodeFile(path)
-                val copiedBitmap = bitmap.copy(Bitmap.Config.ARGB_8888, false)
-                bitmap.recycle()
-                InputImage.fromBitmap(copiedBitmap, 0)
+            val bitmap: Bitmap = if (shouldConvertBitmap) {
+                val tempBitmap = decodedBitmap ?: BitmapFactory.decodeFile(path)
+                val copiedBitmap = tempBitmap.copy(Bitmap.Config.ARGB_8888, false)
+                tempBitmap.recycle()
+                copiedBitmap
             } else {
-                InputImage.fromFilePath(this, Uri.fromFile(File(path)))
+                BitmapFactory.decodeFile(path)
             }
             decodedBitmap?.recycle()
-            val task = client.process(mlImage)
-            task.addOnSuccessListener {
-                client.close()
-                val list = it.fold(mutableListOf<Map<String, Any?>>()) { d, b ->
-                    if (!b.displayValue.isNullOrBlank()) {
-                        d.add(
-                            mapOf(
-                                "value" to b.displayValue,
-                                "boundingBox" to b.boundingBox?.run {
-                                    mapOf(
-                                        "left" to left,
-                                        "top" to top,
-                                        "width" to width(),
-                                        "height" to height(),
-                                    )
-                                },
-                            )
-                        )
-                    }
-                    d
-                }
-                result.success(list)
-            }
-            task.addOnFailureListener {
-                client.close()
-                result.error("-1", it.message, it)
-            }
+            processor.processBitmap(bitmap)
         } ?: result.error("-3", "unmounted", null)
     }
 }
