@@ -32,7 +32,7 @@ class ScanView extends StatefulWidget {
 }
 
 class _ScanViewState extends State<ScanView> with WidgetsBindingObserver {
-  late final Widget _scanView = createView();
+  late Widget? _scanView = createView();
   late ScanResultCallback? _innerResultListener = widget.resultListener;
   late ScanResultCallback? _resultListener;
 
@@ -80,6 +80,8 @@ class _ScanViewState extends State<ScanView> with WidgetsBindingObserver {
 
   @override
   void dispose() {
+    // Remove the scan view widget.
+    _scanView = null;
     WidgetsBinding.instance.removeObserver(this);
     if (_resultListener != null) {
       ScanPlugin.removeListener(_resultListener!);
@@ -150,5 +152,5 @@ class _ScanViewState extends State<ScanView> with WidgetsBindingObserver {
   }
 
   @override
-  Widget build(BuildContext context) => _scanView;
+  Widget build(BuildContext context) => _scanView ?? const SizedBox.shrink();
 }
