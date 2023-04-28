@@ -20,7 +20,7 @@ class ScanView(
     private val size: Size?
 ) : PlatformView, TextureView.SurfaceTextureListener {
     private val context get() = mPlugin.context!!
-    private val mLayout: FrameLayout = FrameLayout(context).apply {
+    private var mLayout: FrameLayout = FrameLayout(context).apply {
         setBackgroundColor(Color.TRANSPARENT)
         keepScreenOn = true
     }
@@ -28,7 +28,15 @@ class ScanView(
     private var mRectView: View? = null
     private var result: MethodChannel.Result? = null
 
-    override fun getView() = mLayout
+    override fun getView(): FrameLayout {
+        if (mLayout.parent != null) {
+            mLayout = FrameLayout(context).apply {
+                setBackgroundColor(Color.TRANSPARENT)
+                keepScreenOn = true
+            }
+        }
+        return mLayout
+    }
 
     override fun dispose() {
         mTextureView?.surfaceTextureListener = null
@@ -45,7 +53,7 @@ class ScanView(
             result?.success(null)
             mPlugin.mCamera?.setPreviewTexture(surface)
             mPlugin.restartPreviewAndDecode()
-        } catch (ioe: IOException) {
+        } catch (_: IOException) {
             // Something bad happened
         } finally {
             result = null
