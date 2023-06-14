@@ -20,7 +20,11 @@ class ScanView(
     private val size: Size?
 ) : PlatformView, TextureView.SurfaceTextureListener {
     private val context get() = mPlugin.context!!
-    private var mLayout: FrameLayout = FrameLayout(context).apply {
+    private val mLayout: FrameLayout = FrameLayout(context).apply {
+        layoutParams = FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.MATCH_PARENT,
+            FrameLayout.LayoutParams.MATCH_PARENT
+        )
         setBackgroundColor(Color.TRANSPARENT)
         keepScreenOn = true
     }
@@ -28,15 +32,7 @@ class ScanView(
     private var mRectView: View? = null
     private var result: MethodChannel.Result? = null
 
-    override fun getView(): FrameLayout {
-        if (mLayout.parent != null) {
-            mLayout = FrameLayout(context).apply {
-                setBackgroundColor(Color.TRANSPARENT)
-                keepScreenOn = true
-            }
-        }
-        return mLayout
-    }
+    override fun getView() = mLayout
 
     override fun dispose() {
         mTextureView?.surfaceTextureListener = null
@@ -83,30 +79,7 @@ class ScanView(
                 FrameLayout.LayoutParams.WRAP_CONTENT,
                 Gravity.CENTER
             )
-        }
-        mTextureView?.surfaceTextureListener = this
-        mLayout.apply {
-            layoutParams = FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.MATCH_PARENT,
-                FrameLayout.LayoutParams.MATCH_PARENT
-            )
-            addView(mTextureView)
-        }
-    }
-
-    fun updateRectView(rect: Rect) {
-        // Only update in debug mode.
-        if (context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE == 0) {
-            return
-        }
-        mRectView.apply {
-            mLayout.removeView(this)
-        }
-        mRectView = View(context).apply {
-            layoutParams = RelativeLayout.LayoutParams(rect.width(), rect.height())
-            x = rect.left.toFloat()
-            y = rect.top.toFloat()
-            setBackgroundColor(Color.parseColor("#33f0f986"))
+            surfaceTextureListener = this@ScanView
             mLayout.addView(this)
         }
     }

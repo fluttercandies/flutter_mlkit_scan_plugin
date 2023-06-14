@@ -334,23 +334,15 @@ class MLKitScanPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
     }
 
     private fun switchScanType(map: HashMap<*, *>) {
-        val type = map["type"] as Int
-        val rect = map["rect"] as List<*>?
-        when (type) {
+        // The Rect is ignored for better scanning capabilities.
+        // val rect = map["rect"] as List<*>?
+        when (val type = map["type"] as Int) {
             Constant.SCAN_TYPE_WAIT -> {
                 mIsDecoding = false
             }
 
             else -> {
                 mIsDecoding = true
-                rect?.apply {
-                    val l = (this[0] as Double).toInt().dp2px(mContext!!)
-                    val t = (this[1] as Double).toInt().dp2px(mContext!!)
-                    val r = l + (this[2] as Double).toInt().dp2px(mContext!!)
-                    val b = t + (this[3] as Double).toInt().dp2px(mContext!!)
-                    mRect = Rect(l, t, r, b)
-                    viewFactory?.view?.updateRectView(mRect)
-                }
                 scanType = type
                 restartPreviewAndDecode()
             }
